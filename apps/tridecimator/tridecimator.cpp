@@ -73,7 +73,7 @@ void Usage()
           "---------------------------------\n"
           "        TriDecimator 1.0 \n"
           "     http://vcg.isti.cnr.it\n"
-          "   release date: " __DATE__ 
+          "   release date: " __DATE__
           "\n---------------------------------\n\n"
           "Copyright 2003-2016 Visual Computing Lab I.S.T.I. C.N.R.\n"
           "\nUsage:  "\
@@ -99,12 +99,30 @@ void Usage()
   exit(-1);
 }
 
+void cleanMesh(MyMesh &mesh)
+{
+  int dup_v = tri::Clean<MyMesh>::RemoveDuplicateVertex(mesh);
+  int dup_e = tri::Clean<MyMesh>::RemoveDuplicateEdge(mesh);
+  int dup_f = tri::Clean<MyMesh>::RemoveDuplicateFace(mesh);
+  int unref_v =  tri::Clean<MyMesh>::RemoveUnreferencedVertex(mesh);
+  int degenerate_v =  tri::Clean<MyMesh>::RemoveDegenerateVertex(mesh);
+  int degenerate_f =  tri::Clean<MyMesh>::RemoveDegenerateFace(mesh);
+  int nonmanifold_f =  0; // tri::Clean<MyMesh>::RemoveNonManifoldFace(mesh);
+  printf(
+    "Removed %i duplicate and %i unreferenced, %i degenerate vertices\n"
+    "Removed %i duplicate edges\n"
+    "Removed %i duplicate and %i degenerate, %i nonmanifold faces\n",
+    dup_v,unref_v, degenerate_v,
+    dup_e, dup_f, degenerate_f, nonmanifold_f
+  );
+}
+
 int main(int argc ,char**argv)
 {
   if(argc<4) Usage();
 
   MyMesh mesh;
-  
+
   int FinalSize=atoi(argv[3]);
   int err=vcg::tri::io::Importer<MyMesh>::Open(mesh,argv[1]);
   if(err)
@@ -180,6 +198,8 @@ int main(int argc ,char**argv)
 
   while(DeciSession.DoOptimization() && mesh.fn>FinalSize && DeciSession.currMetric < TargetError)
     printf("Current Mesh size %7i heap sz %9i err %9g \r",mesh.fn, int(DeciSession.h.size()),DeciSession.currMetric);
+
+  cleanMesh(mesh);
 
   int t3=clock();
   printf("mesh  %d %d Error %g \n",mesh.vn,mesh.fn,DeciSession.currMetric);
